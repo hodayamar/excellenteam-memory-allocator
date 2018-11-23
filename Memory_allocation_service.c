@@ -15,15 +15,18 @@ MemoryAllocator* MemoryAllocator_init(void* memoryPool, size_t size){
 
     p_MemoryAllocator-> memory_ptr = memoryPool;
     p_MemoryAllocator-> size_of_memory = size;
+    *((size_t*)p_MemoryAllocator->memory_ptr) = p_MemoryAllocator->size_of_memory;
+    *((size_t*)p_MemoryAllocator->memory_ptr)|= 1 << 0;
 
 
     return p_MemoryAllocator;
-
 }
 
 void* MemoryAllocator_allocate(MemoryAllocator* allocator, size_t size){
 
+
 return NULL;
+
 }
 
 /* Return number of still allocated blocks */
