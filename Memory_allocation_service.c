@@ -30,7 +30,7 @@ void* MemoryAllocator_allocate(MemoryAllocator* allocator, size_t size)
 {
 
     void* next_block = allocator->memory_ptr;
-    size_t index = *((size_t*)next_block);
+    size_t index;
     size_t pow_of_two = 1;
     size_t not_located = 1;
 
@@ -41,34 +41,37 @@ void* MemoryAllocator_allocate(MemoryAllocator* allocator, size_t size)
 
     while(not_located)
     {
+
         if(*((size_t*)next_block) & 1)
         {
             index = *((size_t*)next_block);
-            if((size_t*)allocator->memory_ptr - (index + (size_t*)next_block) > allocator->size_of_memory)
-                return NULL;
-            next_block = index + (size_t*)next_block;
 
         }
 
         else if(*((size_t*)next_block) >= size)
         {
-            *((size_t*)allocator->memory_ptr + (size_t)((size_t*)allocator->memory_ptr - (size_t*)next_block) + size + 1) =
+            *((size_t*)allocator->memory_ptr + (size_t)((size_t*)next_block) + size + 1 - (size_t)(size_t*)allocator->memory_ptr) =
                     *((size_t*)next_block) - size;
 
-            *((size_t*)allocator->memory_ptr + (size_t)((size_t*)allocator->memory_ptr - (size_t*)next_block)) = size + 1;
+            *((size_t*)allocator->memory_ptr + (size_t)((size_t*)next_block) - (size_t)(size_t*)allocator->memory_ptr ) = size + 1;
 
-            not_located = 0;
+            return next_block;
         }
+
         else if((*((size_t*)next_block + *((size_t*)next_block) + 1) & 0) == 0)
         {
-            *((size_t*)allocator->memory_ptr + (size_t)((size_t*)allocator->memory_ptr - (size_t*)next_block)) =
-                    *((size_t*)next_block) + *((size_t*)next_block + *((size_t*)next_block));
+            *((size_t*)allocator->memory_ptr + (size_t)((size_t*)next_block - (size_t)(size_t*)allocator->memory_ptr )) =
+                    *((size_t*)next_block) + *((size_t*)next_block + *((size_t*)next_block) + 1);
 
+            index = *((size_t*)next_block);
         }
 
-    }
+        if(((size_t)((index + (size_t*)next_block) - (size_t)(size_t*)allocator->memory_ptr)) > allocator->size_of_memory)
+            not_located = 0;
+            return NULL;
 
-    return next_block;
+        next_block = index + (size_t*)next_block;
+    }
 
 }
 
@@ -77,7 +80,7 @@ size_t MemoryAllocator_free(MemoryAllocator* allocator, void* ptr){
 
     size_t end_of_array = 1;
     void* next_block = allocator->memory_ptr;
-    size_t index = *((size_t*)next_block);
+    size_t index;
     size_t still_allocated_blocks = 0;
 
     while(end_of_array)
@@ -99,32 +102,28 @@ size_t MemoryAllocator_free(MemoryAllocator* allocator, void* ptr){
 /* Return the size of largest free block */
 size_t MemoryAllocator_optimize(MemoryAllocator* allocator){
 
-    MemoryAllocator_allocate(allocator, allocator->size_of_memory);
-
     size_t end_of_array = 1;
     void* next_block = allocator->memory_ptr;
-    size_t index = *((size_t*)next_block);
+    size_t index;
     size_t largest_free_block = *((size_t*)next_block);
+
+    MemoryAllocator_allocate(allocator, allocator->size_of_memory);
 
     while(end_of_array)
     {
         index = *((size_t*)next_block);
 
         if(index >= largest_free_block)
-            largest_free_block = *((size_t*)next_block;
-
+            largest_free_block = *((size_t*)next_block);
 
         if((size_t*)allocator->memory_ptr - (index + (size_t*)next_block) <= allocator->size_of_memory)
             next_block = index + (size_t*)next_block;
         else
             end_of_array = 0;
 
-
-
     }
 
-    return still_allocated_blocks;
-
+    return largest_free_block;
 }
 
 
