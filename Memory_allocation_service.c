@@ -103,19 +103,18 @@ size_t MemoryAllocator_optimize(MemoryAllocator* allocator){
     void* current_block = allocator->memory_ptr;
     size_t index;
     size_t largest_free_block = *((size_t*)current_block);
-    size_t *end_of_allocator = (size_t*)current_block + (allocator->size_of_memory/sizeof(size_t));
+    size_t *end_of_allocator = (size_t*)current_block + allocator->size_of_memory;
 
     MemoryAllocator_allocate(allocator, allocator->size_of_memory);
 
     while(current_block != end_of_allocator)
     {
-        index = *((size_t*)current_block);
 
-        if(index >= largest_free_block)
+        if(((*((size_t*)current_block)) > largest_free_block) && ((*((size_t*)current_block) & AVAILABLE) == AVAILABLE))
             largest_free_block = *((size_t*)current_block);
 
+        index = *((size_t*)current_block) + MANAGER_SIZE;
         current_block = index + (size_t*)current_block;
-
     }
 
     return largest_free_block;
