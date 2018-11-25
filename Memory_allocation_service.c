@@ -62,9 +62,13 @@ void* MemoryAllocator_allocate(MemoryAllocator* allocator, size_t size)
 
         }
 
-        /*Move to th next block*/
-        index = *((size_t*)current_block) + MANAGER_SIZE;
-        current_block = index +(size_t*)current_block;
+        else
+        {
+                /*Move to th next block*/
+                index = *((size_t*)current_block) + MANAGER_SIZE;
+                current_block = index +(size_t*)current_block;
+        }
+
     }
 
     return NULL;
