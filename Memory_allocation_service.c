@@ -80,18 +80,17 @@ size_t MemoryAllocator_free(MemoryAllocator* allocator, void* ptr){
     void* current_block = allocator->memory_ptr;
     size_t index;
     size_t still_allocated_blocks = 0;
-    size_t *end_of_allocator = (size_t*)current_block + (allocator->size_of_memory/sizeof(size_t));
+    size_t *end_of_allocator = (size_t*)current_block + allocator->size_of_memory;
 
+    *(size_t*)ptr -= UNAVAILABLE;
 
     while(current_block != end_of_allocator)
     {
-        if(*((size_t*)current_block) & 1)
+        if(*((size_t*)current_block) & UNAVAILABLE)
             still_allocated_blocks += 1;
 
-        index = *((size_t*)current_block);
-
+        index = *((size_t*)current_block) + MANAGER_SIZE;
         current_block = index + (size_t*)current_block;
-
     }
 
     return still_allocated_blocks;
