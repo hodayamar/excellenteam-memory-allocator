@@ -1,6 +1,7 @@
 #include "Memory_allocation_service.h"
 
 #define AVAILABLE 0
+#define MANAGER_SIZE sizeof(size_t)
 #define UNAVAILABLE 1
 
 struct MemoryAllocator
@@ -20,66 +21,72 @@ MemoryAllocator* MemoryAllocator_init(void* memoryPool, size_t size)
 
     p_MemoryAllocator-> memory_ptr = memoryPool;
     p_MemoryAllocator-> size_of_memory = size;
-    *((size_t*)p_MemoryAllocator->memory_ptr) = p_MemoryAllocator->size_of_memory;
-    *((size_t*)p_MemoryAllocator->memory_ptr)|= 1 << 0;
-    printf("%lu", *((size_t*)p_MemoryAllocator->memory_ptr));
+    *((size_t*)p_MemoryAllocator->memory_ptr) = p_MemoryAllocator->size_of_memory - MANAGER_SIZE;
+
     return p_MemoryAllocator;
 }
 
 void* MemoryAllocator_allocate(MemoryAllocator* allocator, size_t size)
 {
+    /*Iterate on block managers*/
+    void* current_block = allocator->memory_ptr;
 
-    void* next_block = allocator->memory_ptr;
+    /*Size of current block*/
     size_t index;
-    size_t pow_of_two = 1;
-    size_t *end_of_allocator = (size_t*)next_block + (allocator->size_of_memory/sizeof(size_t));
 
-    while(pow_of_two < size)
-        pow_of_two *= 2;
+    size_t *end_of_allocator = (size_t*)current_block + (allocator->size_of_memory/sizeof(size_t));
 
-    size = pow_of_two;
+    /*Align size to size_of(size_t)*/
+    while(size++ % sizeof(size_t)){}
 
-    while(next_block != end_of_allocator)
+    while(current_block != end_of_allocator)
     {
-
-        if(*((size_t*)next_block) >= size)
+        /*If the current block is available*/
+        if((*((size_t*)current_block) & AVAILABLE) == AVAILABLE)
         {
-            *(((size_t*)next_block) + size + 1 ) = *((size_t*)next_block) - size;
+            /*If the current block's size fits*/
+            if((*((size_t*)current_block) - AVAILABLE >= size))
+            {
+                /*If the current block's size fits*/
+                if((*((size_t*)current_block) - AVAILABLE > size))
+                    *(((size_t*)current_block) + size + MANAGER_SIZE) = *((size_t*)current_block) - size - MANAGER_SIZE;
 
-            *((size_t*)next_block) = size + 1;
+                *((size_t*)current_block) = size + UNAVAILABLE;
 
-            return next_block;
+                return current_block;
+            }
+
+            else if((*((size_t*)current_block + *((size_t*)current_block) + MANAGER_SIZE) & AVAILABLE) == AVAILABLE)
+
+                *((size_t*)current_block) += *((size_t*)current_block + *((size_t*)current_block) + MANAGER_SIZE) - AVAILABLE;
+
         }
 
-        else if((*((size_t*)next_block + *((size_t*)next_block) + 1) & 0) == 0)
-        {
-            *((size_t*)next_block) = *((size_t*)next_block) + *((size_t*)next_block + *((size_t*)next_block) + 1);
-
-            index = *((size_t*)next_block);
-        }
-
-        next_block = index + (size_t*)next_block;
+        /*Move to th next block*/
+        index = *((size_t*)current_block) + MANAGER_SIZE;
+        current_block = index +(size_t*)current_block;
     }
+
     return NULL;
 }
 
 /* Return number of still allocated blocks */
 size_t MemoryAllocator_free(MemoryAllocator* allocator, void* ptr){
 
-    void* next_block = allocator->memory_ptr;
+    void* current_block = allocator->memory_ptr;
     size_t index;
     size_t still_allocated_blocks = 0;
-    size_t *end_of_allocator = (size_t*)next_block + (allocator->size_of_memory/sizeof(size_t));
+    size_t *end_of_allocator = (size_t*)current_block + (allocator->size_of_memory/sizeof(size_t));
 
 
-    while(next_block != end_of_allocator)
+    while(current_block != end_of_allocator)
     {
-        if(*((size_t*)next_block) & 1)
+        if(*((size_t*)current_block) & 1)
             still_allocated_blocks += 1;
 
-        index = *((size_t*)next_block);
+        index = *((size_t*)current_block);
 
-        next_block = index + (size_t*)next_block;
+        current_block = index + (size_t*)current_block;
 
     }
 
@@ -90,21 +97,21 @@ size_t MemoryAllocator_free(MemoryAllocator* allocator, void* ptr){
 /* Return the size of largest free block */
 size_t MemoryAllocator_optimize(MemoryAllocator* allocator){
 
-    void* next_block = allocator->memory_ptr;
+    void* current_block = allocator->memory_ptr;
     size_t index;
-    size_t largest_free_block = *((size_t*)next_block);
-    size_t *end_of_allocator = (size_t*)next_block + (allocator->size_of_memory/sizeof(size_t));
+    size_t largest_free_block = *((size_t*)current_block);
+    size_t *end_of_allocator = (size_t*)current_block + (allocator->size_of_memory/sizeof(size_t));
 
     MemoryAllocator_allocate(allocator, allocator->size_of_memory);
 
-    while(next_block != end_of_allocator)
+    while(current_block != end_of_allocator)
     {
-        index = *((size_t*)next_block);
+        index = *((size_t*)current_block);
 
         if(index >= largest_free_block)
-            largest_free_block = *((size_t*)next_block);
+            largest_free_block = *((size_t*)current_block);
 
-        next_block = index + (size_t*)next_block;
+        current_block = index + (size_t*)current_block;
 
     }
 
