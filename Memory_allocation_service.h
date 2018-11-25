@@ -18,5 +18,7 @@ size_t MemoryAllocator_free(MemoryAllocator* allocator, void* ptr);
 /* Return the size of largest free block */
 size_t MemoryAllocator_optimize(MemoryAllocator* allocator);
 
+size_t MemoryAllocator_free(MemoryAllocator* allocator);
+
 
 #endif

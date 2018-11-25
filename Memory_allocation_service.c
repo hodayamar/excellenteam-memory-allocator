@@ -133,4 +133,11 @@ size_t MemoryAllocator_optimize(MemoryAllocator* allocator){
     return largest_free_block;
 }
 
+size_t MemoryAllocator_free(MemoryAllocator* allocator)
+{
+    free(allocator->memory_ptr);
+    free(allocator);
+}
+
+
 
