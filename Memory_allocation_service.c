@@ -32,67 +32,55 @@ void* MemoryAllocator_allocate(MemoryAllocator* allocator, size_t size)
     void* next_block = allocator->memory_ptr;
     size_t index;
     size_t pow_of_two = 1;
-    size_t not_located = 1;
+    size_t *end_of_allocator = (size_t*)next_block + (allocator->size_of_memory/sizeof(size_t));
 
     while(pow_of_two < size)
         pow_of_two *= 2;
 
     size = pow_of_two;
 
-    while(not_located)
+    while(next_block != end_of_allocator)
     {
 
-        if(*((size_t*)next_block) & 1)
+        if(*((size_t*)next_block) >= size)
         {
-            index = *((size_t*)next_block);
+            *(((size_t*)next_block) + size + 1 ) = *((size_t*)next_block) - size;
 
-        }
-
-        else if(*((size_t*)next_block) >= size)
-        {
-            *((size_t*)allocator->memory_ptr + (size_t)((size_t*)next_block) + size + 1 - (size_t)(size_t*)allocator->memory_ptr) =
-                    *((size_t*)next_block) - size;
-
-            *((size_t*)allocator->memory_ptr + (size_t)((size_t*)next_block) - (size_t)(size_t*)allocator->memory_ptr ) = size + 1;
+            *((size_t*)next_block) = size + 1;
 
             return next_block;
         }
 
         else if((*((size_t*)next_block + *((size_t*)next_block) + 1) & 0) == 0)
         {
-            *((size_t*)allocator->memory_ptr + (size_t)((size_t*)next_block - (size_t)(size_t*)allocator->memory_ptr )) =
-                    *((size_t*)next_block) + *((size_t*)next_block + *((size_t*)next_block) + 1);
+            *((size_t*)next_block) = *((size_t*)next_block) + *((size_t*)next_block + *((size_t*)next_block) + 1);
 
             index = *((size_t*)next_block);
         }
 
-        if(((size_t)((index + (size_t*)next_block) - (size_t)(size_t*)allocator->memory_ptr)) > allocator->size_of_memory)
-            not_located = 0;
-            return NULL;
-
         next_block = index + (size_t*)next_block;
     }
-
+    return NULL;
 }
 
 /* Return number of still allocated blocks */
 size_t MemoryAllocator_free(MemoryAllocator* allocator, void* ptr){
 
-    size_t end_of_array = 1;
     void* next_block = allocator->memory_ptr;
     size_t index;
     size_t still_allocated_blocks = 0;
+    size_t *end_of_allocator = (size_t*)next_block + (allocator->size_of_memory/sizeof(size_t));
 
-    while(end_of_array)
+
+    while(next_block != end_of_allocator)
     {
         if(*((size_t*)next_block) & 1)
             still_allocated_blocks += 1;
 
         index = *((size_t*)next_block);
-        if((size_t*)allocator->memory_ptr - (index + (size_t*)next_block) <= allocator->size_of_memory)
-            next_block = index + (size_t*)next_block;
-        else
-            end_of_array = 0;
+
+        next_block = index + (size_t*)next_block;
+
     }
 
     return still_allocated_blocks;
@@ -102,24 +90,21 @@ size_t MemoryAllocator_free(MemoryAllocator* allocator, void* ptr){
 /* Return the size of largest free block */
 size_t MemoryAllocator_optimize(MemoryAllocator* allocator){
 
-    size_t end_of_array = 1;
     void* next_block = allocator->memory_ptr;
     size_t index;
     size_t largest_free_block = *((size_t*)next_block);
+    size_t *end_of_allocator = (size_t*)next_block + (allocator->size_of_memory/sizeof(size_t));
 
     MemoryAllocator_allocate(allocator, allocator->size_of_memory);
 
-    while(end_of_array)
+    while(next_block != end_of_allocator)
     {
         index = *((size_t*)next_block);
 
         if(index >= largest_free_block)
             largest_free_block = *((size_t*)next_block);
 
-        if((size_t*)allocator->memory_ptr - (index + (size_t*)next_block) <= allocator->size_of_memory)
-            next_block = index + (size_t*)next_block;
-        else
-            end_of_array = 0;
+        next_block = index + (size_t*)next_block;
 
     }
 
