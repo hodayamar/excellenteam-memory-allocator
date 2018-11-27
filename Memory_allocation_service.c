@@ -17,7 +17,7 @@ MemoryAllocator* MemoryAllocator_init(void* memoryPool, size_t size)
 
     MemoryAllocator *p_MemoryAllocator = malloc(sizeof(MemoryAllocator));
 
-    assert(memoryPool != NULL);
+    assert(memoryPool);
 
     if(size % sizeof(size_t) != 0)
         size -= size % sizeof(size_t);
@@ -41,7 +41,7 @@ void* MemoryAllocator_allocate(MemoryAllocator* allocator, size_t size)
 
     size_t *end_of_allocator = (size_t*)current_block + (allocator->size_of_memory/sizeof(size_t));
 
-    assert(allocator->memory_ptr == NULL);
+    assert(allocator->memory_ptr);
 
     /*Align size to size_of(size_t)*/
     while(size++ % sizeof(size_t)){}
@@ -90,7 +90,7 @@ size_t MemoryAllocator_free(MemoryAllocator* allocator, void* ptr){
     size_t still_allocated_blocks = 0;
     size_t *end_of_allocator = (size_t*)current_block + allocator->size_of_memory;
 
-    assert(allocator->memory_ptr == NULL);
+    assert(allocator->memory_ptr);
 
     *(size_t*)ptr -= UNAVAILABLE;
 
@@ -115,7 +115,7 @@ size_t MemoryAllocator_optimize(MemoryAllocator* allocator){
     size_t largest_free_block = *((size_t*)current_block);
     size_t *end_of_allocator = (size_t*)current_block + allocator->size_of_memory;
 
-    assert(allocator->memory_ptr == NULL);
+    assert(allocator->memory_ptr);
 
     MemoryAllocator_allocate(allocator, allocator->size_of_memory);
 
