@@ -67,7 +67,6 @@ void* MemoryAllocator_allocate(MemoryAllocator* allocator, size_t size)
             else if((*((size_t*)current_block + *((size_t*)current_block) + MANAGER_SIZE) & AVAILABLE) == AVAILABLE)
 
                 *((size_t*)current_block) += *((size_t*)current_block + *((size_t*)current_block) + MANAGER_SIZE) - AVAILABLE;
-
         }
 
         else
@@ -133,7 +132,7 @@ size_t MemoryAllocator_optimize(MemoryAllocator* allocator){
     return largest_free_block;
 }
 
-size_t MemoryAllocator_free(MemoryAllocator* allocator)
+void MemoryAllocator_final_free(MemoryAllocator* allocator)
 {
     free(allocator->memory_ptr);
     free(allocator);
